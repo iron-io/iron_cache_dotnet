@@ -50,7 +50,6 @@
     <Compile Include="Data\Cache.cs" />
     <Compile Include="Data\CacheItem.cs" />
     <Compile Include="Data\Error.cs" />
-    <Compile Include="Data\Increment.cs" />
     <Compile Include="Data\Item.cs" />
     <Compile Include="IronCache.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

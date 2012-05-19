@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 namespace io.iron.ironcache.Data
 {
     [JsonObject(MemberSerialization.OptOut)]
-    public class CacheItem
+    internal class CacheItem
     {
         public string Cache { get; set; }
 

@@ -51,8 +51,10 @@ namespace IronCacheTests
         [TestMethod()]
         public void IronCacheConstructorTest()
         {
-            Client client = null;
-            IronCache target = new IronCache(client);
+            string projectId = _projectId;
+            string token = _token;
+            IronCache target = new IronCache(projectId, token);
+
             Assert.IsNotNull(target);
         }
 
@@ -64,8 +66,7 @@ namespace IronCacheTests
         {
             string projectId = _projectId;
             string token = _token;
-            Client client = new Client(projectId, token, "cache-aws-us-east-1.iron.io");
-            IronCache target = new IronCache(client);
+            IronCache target = new IronCache(projectId, token);
             var expected = 1;
             IList<Cache> actual;
             actual = target.Caches();
@@ -78,21 +79,17 @@ namespace IronCacheTests
         {
             string projectId = _projectId;
             string token = _token;
-            Client client = new Client(projectId, token, "cache-aws-us-east-1.iron.io");
-            IronCache target = new IronCache(client);
+            IronCache target = new IronCache(projectId, token);
 
             string value = "this is some arbitrary text";
             string key = "this is an arbitrary key";
             string cache = "test_cache";
-            var item = new Item()
-            {
-                Body = value,
-                ExpiresIn = 10
-            };
-            target.Add(cache, key, item);
+
+            target.Add(cache, key, value);
             var actual = target.Get(cache, key);
+
             Assert.IsNotNull(actual);
-            Assert.AreEqual(value, actual.Value);
+            Assert.AreEqual(value, actual);
         }
 
         [TestMethod()]
@@ -100,12 +97,27 @@ namespace IronCacheTests
         {
             string projectId = _projectId;
             string token = _token;
-            Client client = new Client(projectId, token, "cache-aws-us-east-1.iron.io");
-            IronCache target = new IronCache(client);
+            IronCache target = new IronCache(projectId, token);
 
             string key = "82de17a0-cab9-45a5-a851-bccb210a9e1f";
             string cache = "test_cache";
             target.Remove(cache, key);
+            var expected = 1;
+            var actual = target.Increment(cache, key, 1);
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod()]
+        public void IncrementExistingIntegerTest()
+        {
+            string projectId = _projectId;
+            string token = _token;
+            IronCache target = new IronCache(projectId, token);
+
+            string key = "cf435dc2-7f12-4f37-94c2-26077b3cd414"; // random unique identifier
+            string cache = "test_cache";
+            target.Remove(cache, key);
+            target.Add(cache, key, "0", true, true, 10);
             var expected = 1;
             var actual = target.Increment(cache, key, 1);
             Assert.AreEqual(expected, actual);
