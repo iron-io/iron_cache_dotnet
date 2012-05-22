@@ -7,13 +7,13 @@ using Newtonsoft.Json;
 namespace io.iron.ironcache.Data
 {
     [JsonObject(MemberSerialization.OptOut)]
-    internal class Item
+    internal class Item<T>
     {
         /// <summary>
         /// The item’s data
         /// </summary>
         [JsonProperty("body")]
-        public string Body { get; set; }
+        public T Body { get; set; }
 
         /// <summary>
         ///  How long in seconds to keep the item in the cache before it is deleted. Default is 604,800 seconds (7 days). Maximum is 2,592,000 seconds (30 days).

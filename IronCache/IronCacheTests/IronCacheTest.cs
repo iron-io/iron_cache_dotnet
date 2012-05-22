@@ -93,7 +93,7 @@ namespace IronCacheTests
         }
 
         [TestMethod()]
-        public void IncrementTest()
+        public void IncrementNonExistingTest()
         {
             string projectId = _projectId;
             string token = _token;
@@ -102,9 +102,14 @@ namespace IronCacheTests
             string key = "82de17a0-cab9-45a5-a851-bccb210a9e1f";
             string cache = "test_cache";
             target.Remove(cache, key);
-            var expected = 1;
-            var actual = target.Increment(cache, key, 1);
-            Assert.AreEqual(expected, actual);
+            try
+            {
+                var actual = target.Increment(cache, key, 1);
+                Assert.Fail();
+            }
+            catch (KeyNotFoundException knf)
+            {
+            }
         }
 
         [TestMethod()]
@@ -117,7 +122,7 @@ namespace IronCacheTests
             string key = "cf435dc2-7f12-4f37-94c2-26077b3cd414"; // random unique identifier
             string cache = "test_cache";
             target.Remove(cache, key);
-            target.Add(cache, key, "0", true, true, 10);
+            target.Add(cache, key, 0, false, false, 10);
             var expected = 1;
             var actual = target.Increment(cache, key, 1);
             Assert.AreEqual(expected, actual);

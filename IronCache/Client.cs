@@ -76,8 +76,18 @@ namespace io.iron.ironcache
                     write.Flush();
                 }
             }
-
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            HttpWebResponse response;
+            try
+            {
+                response = (HttpWebResponse)request.GetResponse();
+            }
+            catch (WebException we)
+            {
+                if (we.Response != null)
+                    response = (HttpWebResponse)we.Response;
+                else
+                    throw we;
+            }
             string json = string.Empty;
             using (System.IO.StreamReader reader = new System.IO.StreamReader(response.GetResponseStream()))
             {

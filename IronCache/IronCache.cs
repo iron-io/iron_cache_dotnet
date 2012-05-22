@@ -25,10 +25,10 @@ namespace io.iron.ironcache
             return caches as IList<Cache>;
         }
 
-        public void Add(string cache, string key, string value, bool add = false, bool replace = false, int expiresIn = 0)
+        public void Add<T>(string cache, string key, T value, bool add = false, bool replace = false, int expiresIn = 0)
         {
             string endpoint = string.Format("{0}/{1}/items/{2}", _core, cache, key);
-            var item = new Item() { Body = value, Add = add, Replace = replace, ExpiresIn = expiresIn };
+            var item = new Item<T>() { Body = value, Add = add, Replace = replace, ExpiresIn = expiresIn };
             var body = JsonConvert.SerializeObject(item);
             var response = _client.put(endpoint, body);
         }
@@ -49,15 +49,39 @@ namespace io.iron.ironcache
             var response = _client.delete(endpoint);
         }
 
+        /// <summary>
+        /// Increment an existing integer
+        /// </summary>
+        /// <param name="cache">Cache Name</param>
+        /// <param name="key">Key to lookkup</param>
+        /// <param name="amount">amount to increment (decrement) value at the specified key</param>
+        /// <returns>value after increment</returns>
+        /// <exception cref="System.Collections.Generic.KeyNotFoundException"></exception>
+        /// <exception cref="System.InvalidOperationException"></exception>
         public int Increment(string cache, string key, int amount)
         {
             string endpoint = string.Format("{0}/{1}/items/{2}/increment", _core, cache, key);
 
             var body = "{" + string.Format("\"amount\": {0}", amount) + "}";
-            var response = _client.post(endpoint, body);
+            try
+            {
+                var response = _client.post(endpoint, body);
 
-            var increment = JsonConvert.DeserializeObject<Dictionary<string, string>>(response);
-            return int.Parse(increment["value"]);
+                var increment = JsonConvert.DeserializeObject<Dictionary<string, string>>(response);
+                return int.Parse(increment["value"]);
+            }
+            catch (System.Web.HttpException e)
+            {
+                if (e.GetHttpCode() == 404)
+                {
+                    throw new KeyNotFoundException(e.Message);
+                }
+                if (e.GetHttpCode() == 400)
+                {
+                    throw new InvalidOperationException(e.Message);
+                }
+                throw e;
+            }
         }
     }
 }
