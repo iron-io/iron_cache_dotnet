@@ -25,7 +25,56 @@ namespace io.iron.ironcache
             return caches as IList<Cache>;
         }
 
-        public void Add<T>(string cache, string key, T value, bool add = false, bool replace = false, int expiresIn = 0)
+        /// <summary>
+        ///  Only set the item if the item is not already in the cache. If the item is in the cache, do not overwrite it.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="cache">Name of the cache</param>
+        /// <param name="key">The key to store the item under in the cache</param>
+        /// <param name="value">Item to be stored</param>
+        /// <param name="expiresIn"> How long in seconds to keep the item in the cache before it is deleted. Default is 604,800 seconds (7 days). Maximum is 2,592,000 seconds (30 days).</param>
+        public void Add<T>(string cache, string key, T value, int expiresIn = 0)
+        {
+            Put<T>(cache, key, value, true, false, expiresIn);
+        }
+
+        /// <summary>
+        /// Sets the value at the key in the cache
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="cache">Name of the cache</param>
+        /// <param name="key">The key to store the item under in the cache</param>
+        /// <param name="value">Item to be stored</param>
+        /// <param name="expiresIn"> How long in seconds to keep the item in the cache before it is deleted. Default is 604,800 seconds (7 days). Maximum is 2,592,000 seconds (30 days).</param>
+        public void Set<T>(string cache, string key, T value, int expiresIn = 0)
+        {
+            Put<T>(cache, key, value, false, false, expiresIn);
+        }
+
+        /// <summary>
+        /// Only set the item if the item is already in the cache. If the item is not in the cache, do not create it.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="cache"></param>
+        /// <param name="key">The key to store the item under in the cache</param>
+        /// <param name="value">Item to be stored</param>
+        /// <param name="expiresIn"> How long in seconds to keep the item in the cache before it is deleted. Default is 604,800 seconds (7 days). Maximum is 2,592,000 seconds (30 days).</param>
+        public void Replace<T>(string cache, string key, T value, int expiresIn = 0)
+        {
+            Put<T>(cache, key, value, false, true, expiresIn);
+        }
+
+        /// <summary>
+        /// Puts a value into the cache for the provided key.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="cache">Name of the cache</param>
+        /// <param name="key">The key to store the item under in the cache</param>
+        /// <param name="value">Item to be stored</param>
+        /// <param name="add">If set to true, only set the item if the item is not already in the cache. If the item is in the cache, do not overwrite it.</param>
+        /// <param name="replace">If set to true, only set the item if the item is already in the cache. If the item is not in the cache, do not create it.</param>
+        /// <param name="expiresIn"> How long in seconds to keep the item in the cache before it is deleted. Default is 604,800 seconds (7 days). Maximum is 2,592,000 seconds (30 days).</param>
+        public void Put<T>(string cache, string key, T value, bool add = false, bool replace = false, int expiresIn = 0)
         {
             if (add && replace) throw new ArgumentException("add and replace cannot both be true.");
             string endpoint = string.Format("{0}/{1}/items/{2}", _core, cache, key);
@@ -34,13 +83,31 @@ namespace io.iron.ironcache
             var response = _client.put(endpoint, body);
         }
 
-        public string Get(string cache, string key)
+        /// <summary>
+        /// Internal Get method
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="cache"> The name of the cache the item belongs to.</param>
+        /// <param name="key">The key the item is stored under in the cache.</param>
+        /// <param name="defaultValue">Value to return if not found</param>
+        /// <returns>Value at the key or the default value if not found</returns>
+        public T Get<T>(string cache, string key, T defaultValue = default(T))
         {
             string endpoint = string.Format("{0}/{1}/items/{2}", _core, cache, key);
-
-            var response = _client.get(endpoint);
-            var item = JsonConvert.DeserializeObject<Dictionary<string, string>>(response);
-            return item["value"];
+            try
+            {
+                var response = _client.get(endpoint);
+                var item = JsonConvert.DeserializeObject<CacheItem<T>>(response);
+                return item.Value;
+            }
+            catch (System.Web.HttpException we)
+            {
+                if (we.GetHttpCode() == 404)
+                {
+                    return defaultValue;
+                }
+                throw we;
+            }
         }
 
         public void Remove(string cache, string key)

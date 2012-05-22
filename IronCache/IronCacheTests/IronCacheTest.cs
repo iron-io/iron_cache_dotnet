@@ -85,11 +85,44 @@ namespace IronCacheTests
             string key = "this is an arbitrary key";
             string cache = "test_cache";
 
-            target.Add(cache, key, value);
-            var actual = target.Get(cache, key);
+            target.Put(cache, key, value);
+            var actual = target.Get<string>(cache, key);
 
             Assert.IsNotNull(actual);
             Assert.AreEqual(value, actual);
+        }
+
+        [TestMethod()]
+        public void AddGetIntTest()
+        {
+            string projectId = _projectId;
+            string token = _token;
+            IronCache target = new IronCache(projectId, token);
+
+            int value = 10;
+            string key = "this is an arbitrary key";
+            string cache = "test_cache";
+
+            target.Put(cache, key, value);
+            var actual = target.Get<int?>(cache, key);
+
+            Assert.IsNotNull(actual);
+            Assert.AreEqual(value, actual);
+        }
+
+        [TestMethod()]
+        public void GetMissingValueTest()
+        {
+            string projectId = _projectId;
+            string token = _token;
+            IronCache target = new IronCache(projectId, token);
+
+            string key = "this is an arbitrary key";
+            string cache = "test_cache";
+
+            target.Remove(cache, key);
+            var actual = target.Get<string>(cache, key);
+            Assert.IsNull(actual);
         }
 
         [TestMethod()]
@@ -122,7 +155,7 @@ namespace IronCacheTests
             string key = "cf435dc2-7f12-4f37-94c2-26077b3cd414"; // random unique identifier
             string cache = "test_cache";
             target.Remove(cache, key);
-            target.Add(cache, key, 0, false, false, 10);
+            target.Put(cache, key, 0, false, false, 10);
             var expected = 1;
             var actual = target.Increment(cache, key, 1);
             Assert.AreEqual(expected, actual);

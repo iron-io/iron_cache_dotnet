@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
@@ -19,18 +20,21 @@ namespace io.iron.ironcache.Data
         ///  How long in seconds to keep the item in the cache before it is deleted. Default is 604,800 seconds (7 days). Maximum is 2,592,000 seconds (30 days).
         /// </summary>
         [JsonProperty("expires_in")]
+        [DefaultValue(0)]
         public long ExpiresIn { get; set; }
 
         /// <summary>
         ///  If set to true, only set the item if the item is already in the cache. If the item is not in the cache, do not create it.
         /// </summary>
         [JsonProperty("replace")]
+        [DefaultValue(false)]
         public bool Replace { get; set; }
 
         /// <summary>
         ///  If set to true, only set the item if the item is not already in the cache. If the item is in the cache, do not overwrite it.
         /// </summary>
         [JsonProperty("add")]
+        [DefaultValue(false)]
         public bool Add { get; set; }
     }
 }
