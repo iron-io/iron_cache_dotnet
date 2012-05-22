@@ -27,6 +27,7 @@ namespace io.iron.ironcache
 
         public void Add<T>(string cache, string key, T value, bool add = false, bool replace = false, int expiresIn = 0)
         {
+            if (add && replace) throw new ArgumentException("add and replace cannot both be true.");
             string endpoint = string.Format("{0}/{1}/items/{2}", _core, cache, key);
             var item = new Item<T>() { Body = value, Add = add, Replace = replace, ExpiresIn = expiresIn };
             var body = JsonConvert.SerializeObject(item);
