@@ -15,6 +15,8 @@ namespace IronCacheTests
     [TestClass()]
     public class IronCacheTest
     {
+        private const string CacheKey = "this is an arbitrary key";
+        private const string CacheName = "test_cache";
         string _projectId, _token;
 
         public IronCacheTest()
@@ -41,10 +43,6 @@ namespace IronCacheTests
             }
         }
 
-        #region Additional test attributes
-
-        #endregion Additional test attributes
-
         /// <summary>
         ///A test for IronCache Constructor
         ///</summary>
@@ -67,44 +65,58 @@ namespace IronCacheTests
             string projectId = _projectId;
             string token = _token;
             IronCache target = new IronCache(projectId, token);
-            var expected = 1;
-            IList<Cache> actual;
-            actual = target.Caches();
+            target.Put(CacheName, CacheKey, "dummy value");
+            IList<Cache> actual = target.Caches();
             Assert.IsNotNull(actual);
-            Assert.AreEqual(expected, actual.Count);
+            Assert.IsTrue(actual.Count >= 1, "At least one cache should be present after inserting a value.");
         }
 
         [TestMethod()]
-        public void AddGetTest()
+        public void TestPutAndGetObject()
         {
-            string projectId = _projectId;
-            string token = _token;
-            IronCache target = new IronCache(projectId, token);
+            var value = new
+            {
+                Name = "Boombox",
+                Description = "Loud",
+                IsCool = true
+            };
 
-            string value = "this is some arbitrary text";
-            string key = "this is an arbitrary key";
-            string cache = "test_cache";
+            var actual = TestPutAndGet(value);
 
-            target.Put(cache, key, value);
-            var actual = target.Get<string>(cache, key);
+            Assert.IsNotNull(actual);
+            Assert.AreEqual(value.Name, actual.Name);
+            Assert.AreEqual(value.Description, actual.Description);
+            Assert.AreEqual(value.IsCool, actual.IsCool);
+        }
+
+        [TestMethod()]
+        public void TestPutAndGetString()
+        {
+            var value = "This is a test";
+
+            var actual = TestPutAndGet(value);
 
             Assert.IsNotNull(actual);
             Assert.AreEqual(value, actual);
         }
 
         [TestMethod()]
-        public void AddGetIntTest()
+        public void TestPutAndGetDateTime()
         {
-            string projectId = _projectId;
-            string token = _token;
-            IronCache target = new IronCache(projectId, token);
+            var value = DateTime.Parse("2012-07-04");
 
-            int value = 10;
-            string key = "this is an arbitrary key";
-            string cache = "test_cache";
+            var actual = TestPutAndGet(value);
 
-            target.Put(cache, key, value);
-            var actual = target.Get<int?>(cache, key);
+            Assert.IsNotNull(actual);
+            Assert.AreEqual(value, actual);
+        }
+
+        [TestMethod()]
+        public void TestPutAndGetInt()
+        {
+            var value = 10;
+
+            var actual = TestPutAndGet(value);
 
             Assert.IsNotNull(actual);
             Assert.AreEqual(value, actual);
@@ -118,9 +130,9 @@ namespace IronCacheTests
             IronCache target = new IronCache(projectId, token);
 
             string key = "this is an arbitrary key";
-            string cache = "test_cache";
+            string cache = CacheName;
+            RemoveFromCache(target, cache, key);
 
-            target.Remove(cache, key);
             var actual = target.Get<string>(cache, key);
             Assert.IsNull(actual);
         }
@@ -133,16 +145,12 @@ namespace IronCacheTests
             IronCache target = new IronCache(projectId, token);
 
             string key = "82de17a0-cab9-45a5-a851-bccb210a9e1f";
-            string cache = "test_cache";
-            target.Remove(cache, key);
-            try
-            {
-                var actual = target.Increment(cache, key, 1);
-                Assert.Fail();
-            }
-            catch (KeyNotFoundException knf)
-            {
-            }
+            string cache = CacheName;
+            RemoveFromCache(target, cache, key);
+            
+            var actual = target.Increment(cache, key, 1);
+            
+            Assert.AreEqual(actual, 1, "Increment operation was not performed since value was not present, but value was added to the cache.");
         }
 
         [TestMethod()]
@@ -153,12 +161,39 @@ namespace IronCacheTests
             IronCache target = new IronCache(projectId, token);
 
             string key = "cf435dc2-7f12-4f37-94c2-26077b3cd414"; // random unique identifier
-            string cache = "test_cache";
-            target.Remove(cache, key);
+            string cache = CacheName;
             target.Put(cache, key, 0, false, false, 10);
             var expected = 1;
             var actual = target.Increment(cache, key, 1);
             Assert.AreEqual(expected, actual);
+        }
+
+        private static void RemoveFromCache(IronCache target, string cache, string key)
+        {
+            try
+            {
+                target.Remove(cache, key);
+            }
+            catch(KeyNotFoundException)
+            {
+                // ignore KeyNotFound exception - we just want to be sure that the value is gone.
+            }
+        }
+
+
+        private T TestPutAndGet<T>(T value)
+        {
+            string projectId = _projectId;
+            string token = _token;
+            IronCache target = new IronCache(projectId, token);
+
+            string key = "this is an arbitrary key";
+            string cache = CacheName;
+
+            target.Put(cache, key, value);
+
+            var actual = target.Get<T>(cache, key);
+            return actual;
         }
     }
 }

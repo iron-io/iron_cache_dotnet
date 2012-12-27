@@ -78,9 +78,24 @@ namespace io.iron.ironcache
         {
             if (add && replace) throw new ArgumentException("add and replace cannot both be true.");
             string endpoint = string.Format("{0}/{1}/items/{2}", _core, cache, key);
-            var item = new Item<T>() { Body = value, Add = add, Replace = replace, ExpiresIn = expiresIn };
-            var body = JsonConvert.SerializeObject(item);
-            var response = _client.put(endpoint, body);
+            var requestbody = SerializeRequestBody(value, add, replace, expiresIn);
+            var response = _client.put(endpoint, requestbody);
+        }
+
+        private static string SerializeRequestBody<T>(T value, bool add, bool replace, int expiresIn)
+        {
+            object item;
+
+            if (typeof(T).IsPrimitive)
+            {
+                item = new Item<T> { Body = value, Add = add, Replace = replace, ExpiresIn = expiresIn };
+            }
+            else
+            {
+                item = new Item<string> { Body = JsonConvert.SerializeObject(value), Add = add, Replace = replace, ExpiresIn = expiresIn };
+            }
+
+            return JsonConvert.SerializeObject(item);
         }
 
         /// <summary>
@@ -97,8 +112,7 @@ namespace io.iron.ironcache
             try
             {
                 var response = _client.get(endpoint);
-                var item = JsonConvert.DeserializeObject<CacheItem<T>>(response);
-                return item.Value;
+                return DeserializeResponse<T>(response);
             }
             catch (System.Web.HttpException we)
             {
@@ -108,6 +122,17 @@ namespace io.iron.ironcache
                 }
                 throw we;
             }
+        }
+
+        private static T DeserializeResponse<T>(string response)
+        {
+            if (typeof (T).IsPrimitive)
+            {
+                return JsonConvert.DeserializeObject<CacheItem<T>>(response).Value;;
+            }
+
+            var itemWithJson = JsonConvert.DeserializeObject<CacheItem<string>>(response);
+            return JsonConvert.DeserializeObject<T>(itemWithJson.Value);
         }
 
         public void Remove(string cache, string key)
